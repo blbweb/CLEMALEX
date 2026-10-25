@@ -738,6 +738,64 @@ parentView=function(){
  parentTabsApply();
 };
 
+
+// Synchronisation des MATIÈRES uniquement (sans toucher aux leçons ni aux documents).
+// Import initial volontaire depuis le navigateur du Parent : aucune donnée locale effacée.
+const aeSyncRows='ae_matieres';
+let aeSubjectsSyncToken=0;
+async function aeReadSubjects(uid){
+ const {data,error}=await client.from(aeSyncRows).select('nom').eq('eleve_id',uid);
+ if(error)throw error;
+ return (data||[]).map(r=>r.nom).filter(x=>subjects.includes(x));
+}
+async function aePublishSubjects(who){
+ if(!client||!isParent())throw new Error('Connexion Parent nécessaire.');
+ const uid=parentUIDs[who];
+ if(!/^[\da-f]{8}(-[\da-f]{4}){3}-[\da-f]{12}$/i.test(uid||''))throw new Error('UID de '+who+' manquant : renseigne-le dans Consultation Parent puis clique sur « Consulter les deux dossiers ».');
+ const d=load(who);
+ const desired=[...new Set(d.subjects.filter(x=>subjects.includes(x)&&!(d.archivedSubjects||[]).includes(x)))];
+ if(!desired.length)throw new Error('Aucune matière active pour '+who+'. Import refusé pour éviter une suppression accidentelle.');
+ const existing=await aeReadSubjects(uid);
+ const missing=desired.filter(x=>!existing.includes(x));
+ if(missing.length){const {error}=await client.from(aeSyncRows).insert(missing.map(nom=>({eleve_id:uid,nom})));if(error)throw error;}
+ const extra=existing.filter(x=>!desired.includes(x));
+ for(const nom of extra){const {error}=await client.from(aeSyncRows).delete().eq('eleve_id',uid).eq('nom',nom);if(error)throw error;}
+ return desired.length;
+}
+async function aeRefreshStudentSubjects(){
+ const stamp=++aeSubjectsSyncToken;
+ if(!client||!authenticated()||isParent()||!['Alexane','Clémence'].includes(user))return;
+ const uid=currentId(),selected=user;
+ try{
+  const names=await aeReadSubjects(uid);
+  if(stamp!==aeSubjectsSyncToken||user!==selected||currentId()!==uid||!names.length)return;
+  const d=load(selected);
+  // Conserve intacts les chapitres, leçons, photos et réglages de ce navigateur.
+  if(JSON.stringify(d.subjects)!==JSON.stringify(names)||d.archivedSubjects?.some(x=>names.includes(x))){
+   d.subjects=names;
+   d.archivedSubjects=(d.archivedSubjects||[]).filter(x=>!names.includes(x));
+   save(selected,d);
+   if(!showWelcome&&!subject)render();
+  }
+ }catch(e){console.warn('Synchronisation matières indisponible :',e.message);}
+}
+const aeOriginalSubjectsView=subjectsView;
+subjectsView=function(d){aeOriginalSubjectsView(d);aeRefreshStudentSubjects()};
+const aeOriginalParentView=parentView;
+parentView=function(){
+ aeOriginalParentView();
+ if(!isParent())return;
+ const destination=document.getElementById('parentTabResourcesContent');
+ if(!destination)return;
+ const box=document.createElement('section');box.className='panel';
+ box.innerHTML='<h2>🔄 Synchroniser les matières avec les téléphones</h2><p class="hint">Envoie vers Supabase les matières actuellement cochées sur cet ordinateur. Les leçons et les documents ne seront pas modifiés. Vérifie d’abord les deux UID dans « Consultation Parent ».</p><div class="actions"><button class="primary" id="aeSyncA" type="button">Synchroniser Alexane</button><button class="primary" id="aeSyncC" type="button">Synchroniser Clémence</button></div><p id="aeSyncStatus" class="status" aria-live="polite">Aucun transfert effectué.</p>';
+ destination.insertBefore(box,destination.firstChild);
+ const status=box.querySelector('#aeSyncStatus');
+ for(const [id,who] of [['aeSyncA','Alexane'],['aeSyncC','Clémence']]){
+  const btn=box.querySelector('#'+id);
+  btn.onclick=async()=>{btn.disabled=true;status.textContent='Synchronisation de '+who+' en cours…';try{const count=await aePublishSubjects(who);status.textContent='✅ '+count+' matière(s) de '+who+' synchronisée(s).';}catch(e){status.textContent='❌ '+e.message;}finally{btn.disabled=false;}};
+ }
+};
 async function logout(){if(client)await client.auth.signOut();session=null;unreadUser='';displayUnread(0);user='Alexane';showWelcome=true;subject=null;lesson=null;cloudChapter=null;render()}
 document.body.addEventListener('click',e=>{const x=e.target.closest('button');if(!x)return;if(x.dataset.user){user=x.dataset.user;subject=null;lesson=null;cloudChapter=null;render()}else if(x.dataset.subject){subject=x.dataset.subject;lesson=null;cloudChapter=null;render()}else if(x.dataset.open){cloudChapter=null;lesson=x.dataset.open;subject=load(user).lessons.find(l=>l.id===lesson)?.subject;render()}else if(x.dataset.chapter){cloudChapter=x.dataset.chapter.replace(/-/g,' ');lesson=null;render()}else if(x.dataset.act==='back-subject'){subject=null;lesson=null;cloudChapter=null;render()}else if(x.dataset.act==='back-lesson'){lesson=null;cloudChapter=null;render()}else if(x.dataset.act==='settings'){settings()}else if(x.dataset.act==='chat'){chatView()}else if(x.dataset.act==='back-settings'){render()}else if(x.dataset.act==='logout'){logout()}});
 try{const params=new URLSearchParams(location.search);const who=params.get('eleve'),mat=params.get('matiere');if(['Alexane','Clémence'].includes(who)&&subjects.includes(mat)){user=who;subject=mat;showWelcome=false}}catch{}init();render();
