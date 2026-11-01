@@ -64,7 +64,7 @@ h1,h2,h3,.chapter-title{color:#173a70}.eyebrow{color:#376ab2}
 .welcome-home h1{font-size:clamp(27px,4vw,40px);margin:6px 0 10px}.welcome-home p{color:#546b89;font-size:17px;line-height:1.6}
 .welcome-home .primary{font-size:17px;margin-top:15px;min-width:200px}
 @media(max-width:650px){.welcome-home{margin:18px auto;padding:27px 20px}.welcome-home img{width:130px}}
-.video-frame{width:100%;aspect-ratio:16/9;border:0;border-radius:12px;background:#eaf3ff}.video-item{border-top:1px solid #e5eaf4;padding:12px 0}.video-item video{width:100%;max-height:400px;border-radius:12px}.sender-unread{color:#1455a0;font-weight:750;font-size:13px;margin-top:8px}.home-only .header-actions #headerChat,.home-only .header-actions #headerLogout,.home-only .header-actions #headerHome{display:none!important}
+.video-frame{width:100%;aspect-ratio:16/9;border:0;border-radius:12px;background:#eaf3ff}.video-item{border-top:1px solid #e5eaf4;padding:12px 0}.video-item video{width:100%;max-height:400px;border-radius:12px}.video-link-card{display:grid;grid-template-columns:minmax(120px,190px) 1fr;gap:12px;align-items:center;border:1px solid #e5eaf4;border-radius:14px;padding:10px;background:#fff;margin:10px 0}.video-thumb{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;border:1px solid #dce7f8;background:#eef4ff}.video-link-body{display:flex;flex-direction:column;gap:10px}.video-badge{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#355}.small{display:inline-flex;width:max-content;padding:10px 14px;border-radius:10px}@media(max-width:640px){.video-link-card{grid-template-columns:1fr}.video-thumb{max-height:210px}}.sender-unread{color:#1455a0;font-weight:750;font-size:13px;margin-top:8px}.home-only .header-actions #headerChat,.home-only .header-actions #headerLogout,.home-only .header-actions #headerHome{display:none!important}
 
 /* Accueil personnel compact et accessible sur mobile */
 .ae-personal-layout{display:grid;grid-template-columns:1fr 1fr;align-items:stretch;gap:14px;padding:17px;margin-bottom:13px}
@@ -84,6 +84,8 @@ h1,h2,h3,.chapter-title{color:#173a70}.eyebrow{color:#376ab2}
 @media(max-width:650px){.parent-nav-tabs{gap:7px}.parent-nav-tab{flex:1;padding:11px 9px;font-size:13px}}
 .ae-revision-banner{border:2px solid #a8c7fa;background:linear-gradient(125deg,#eaf3ff,#ffffff);padding:24px;margin:18px 0 22px}.ae-revision-banner h2{margin:0 0 10px}.ae-revision-banner .primary{margin-top:8px;min-height:48px}@media(max-width:590px){.ae-revision-banner .primary{width:100%}}</style><style>
 .ae-lib-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.ae-lib-card{background:#fff;border:1px solid #dce7f5;border-radius:15px;padding:16px;overflow-wrap:anywhere}.ae-lib-card h3{margin:4px 0 7px}.ae-lib-controls{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.ae-lib-controls button{padding:8px 10px;font-size:13px}.ae-lib-form{max-width:850px}.ae-lib-form .row>div{flex:1;min-width:170px}.ae-lib-stat{color:#536c8c;font-size:13px}.ae-lib-hidden{display:none!important}
+
+.ae-pub-backdrop{position:fixed;inset:0;background:#132c4c9c;z-index:9999;display:flex;align-items:center;justify-content:center;padding:14px}.ae-pub-dialog{width:min(590px,100%);max-height:92vh;overflow:auto;background:white;border-radius:20px;padding:23px;box-shadow:0 20px 65px #12274455}.ae-pub-dialog h2{margin:0 0 8px}.ae-pub-dialog label{margin:14px 0 6px}.ae-pub-dialog .ae-pub-footer{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:16px}.ae-pub-dialog .ae-pub-preview{background:#edf5ff;border:1px solid #cadefc;border-radius:12px;padding:13px;margin-top:14px;overflow-wrap:anywhere}.ae-pub-dialog .ae-pub-error{color:#9c2b31;font-size:13px;min-height:19px}.ae-pub-dialog .ae-pub-checkbox{display:flex;gap:8px;align-items:center}.ae-pub-dialog .ae-pub-checkbox input{width:auto}@media(max-width:590px){.ae-pub-dialog{padding:16px}.ae-pub-dialog .ae-pub-footer button{flex:1}}
 </style></head><body><header><div class="wrap top"><div class="brand" aria-label="Apprendre Ensemble">🎓</div><div class="header-actions"><button id="headerHome" class="header-auth outline hidden" type="button">🏠 Mon accueil</button><button id="headerChat" class="header-auth outline hidden" type="button" data-act="chat">💬 Messages <span id="headerUnread" class="hidden" aria-live="polite"></span></button><span id="headerProfile" class="header-profile">Alexane</span><button id="headerLogin" data-act="settings" class="header-auth">Se connecter</button><button id="headerLogout" data-act="logout" class="header-auth outline hidden">Se déconnecter</button></div></div></header><main class="wrap"><section class="hero"><div class="eyebrow">Bibliothèque pédagogique · Seconde</div><h1 id="welcome"></h1><p id="description" class="muted"></p></section><div id="app"></div></main><footer class="wrap">© 2026 – Apprendre Ensemble | Plateforme familiale de révision</footer><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script>
 const subjects=['Mathématiques','Physique-Chimie','SVT','Français','Histoire-Géographie','Anglais','Espagnol','SES','SNT','Autre'];
 const icons={'Mathématiques':'📐','Physique-Chimie':'⚗️','SVT':'🌿','Français':'📚','Histoire-Géographie':'🌍','Anglais':'💬','Espagnol':'🗣️','SES':'📈','SNT':'💻','Autre':'🗂️'};
@@ -575,9 +577,36 @@ async function sendChat(id){
 
 // Vidéos : liens YouTube contrôlés et fichiers MP4 dans le dossier du chapitre.
 function youtubeId(link){try{const u=new URL(link);let id='';if(['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com','youtube-nocookie.com','www.youtube-nocookie.com'].includes(u.hostname)){id=u.searchParams.get('v')||u.pathname.match(/^\/(?:shorts|embed)\/([^/]+)/)?.[1]||''}else if(u.hostname==='youtu.be'||u.hostname==='www.youtu.be'){id=u.pathname.slice(1).split('/')[0]}return /^[a-zA-Z0-9_-]{11}$/.test(id)?id:null}catch{return null}}
+function videoPlatform(url=''){try{const host=new URL(url).hostname.replace(/^www\./,'').toLowerCase();if(host.includes('youtube')||host==='youtu.be')return 'youtube';if(host.includes('facebook'))return 'facebook';return 'video'}catch{return 'video'}}
+function videoThumbPlaceholder(title,platform){
+ const label=platform==='facebook'?'Reel Facebook':platform==='youtube'?'YouTube':'Vidéo en ligne';
+ const emoji=platform==='facebook'?'📘':platform==='youtube'?'▶️':'🎬';
+ const colors=platform==='facebook'?['#1877f2','#7db3ff']:platform==='youtube'?['#ff3131','#ff8a65']:['#6b7cff','#9c89ff'];
+ const esc=(title||'Vidéo').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
+ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="480" height="270" viewBox="0 0 480 270"><defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="${colors[0]}" offset="0"/><stop stop-color="${colors[1]}" offset="1"/></linearGradient></defs><rect width="480" height="270" rx="24" fill="url(#g)"/><circle cx="82" cy="80" r="36" fill="rgba(255,255,255,.22)"/><text x="82" y="93" text-anchor="middle" font-size="34">${emoji}</text><text x="38" y="154" font-size="18" fill="white" opacity=".9">${label}</text><text x="38" y="188" font-size="30" fill="white" font-weight="700">${esc.slice(0,28)}</text><text x="38" y="216" font-size="22" fill="white" opacity=".95">${esc.slice(28,58)}</text></svg>`;
+ return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+function createVideoLinkCard(record){
+ const platform=videoPlatform(record.url||'');
+ const card=document.createElement('article');card.className='video-link-card';
+ const img=document.createElement('img');img.className='video-thumb';img.alt='Miniature : '+(record.title||'Vidéo');
+ const ytId=platform==='youtube'?youtubeId(record.url||''):null;
+ img.src=ytId?`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`:videoThumbPlaceholder(record.title||'Vidéo',platform);
+ img.loading='lazy';
+ const body=document.createElement('div');body.className='video-link-body';
+ const badge=document.createElement('div');badge.className='video-badge';badge.textContent=platform==='facebook'?'📘 Reel Facebook':platform==='youtube'?'▶️ YouTube':'🎬 Vidéo en ligne';
+ const title=document.createElement('strong');title.textContent=record.title||'Vidéo en ligne';
+ const open=document.createElement('a');open.className='primary small';open.href=record.url;open.target='_blank';open.rel='noopener noreferrer';open.textContent='▶️ Regarder';
+ body.append(badge,title,open);card.append(img,body);return card;
+}
 async function addStudentVideos(section,matching){
  for(const path of matching){
   if(path.toLowerCase().endsWith('.mp4')){const {data,error}=await client.storage.from(resourcesBucket).createSignedUrl(path,3600);if(error)continue;const wrap=document.createElement('div');wrap.className='video-item';const name=document.createElement('strong');name.textContent='🎞 '+readableFilename(path);const v=document.createElement('video');v.controls=true;v.preload='metadata';v.playsInline=true;v.src=data.signedUrl;wrap.append(name,v);section.append(wrap);continue}
+  if(path.toLowerCase().endsWith('.link.json')){
+   const {data,error}=await client.storage.from(resourcesBucket).download(path);if(error)continue;
+   try{const record=JSON.parse(await data.text());const u=new URL(record.url);if(!['http:','https:'].includes(u.protocol))continue;record.url=u.href;section.append(createVideoLinkCard(record))
+   }catch(e){console.warn('Lien vidéo non lisible',e)}continue;
+  }
   if(!path.toLowerCase().endsWith('.youtube.json'))continue;
   const {data,error}=await client.storage.from(resourcesBucket).download(path);if(error)continue;
   try{const val=JSON.parse(await data.text());const id=youtubeId(val.url||'');if(!id)continue;const wrap=document.createElement('div');wrap.className='video-item';const name=document.createElement('strong');name.textContent='📺 '+(val.title||'Vidéo YouTube');const frame=document.createElement('iframe');frame.className='video-frame';frame.src='https://www.youtube-nocookie.com/embed/'+id;frame.title=val.title||'Vidéo YouTube';frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';frame.allowFullscreen=true;frame.loading='lazy';wrap.append(name,frame);section.append(wrap)}catch(e){console.warn('Vidéo non lisible',e)}
@@ -884,10 +913,59 @@ async function aeLibDelete(x){
  if(x.fichier){const {error:storageError}=await client.storage.from(aeLibBucket).remove([x.fichier]);if(storageError)aeLibMsg('Fiche supprimée, mais le fichier reste dans le stockage : '+aeLibError(storageError));}
  await aeLibLoad(false);
 }
-async function aeLibPublish(x){if(!isParent())return;const pupil=prompt('Publier pour quelle élève ? Saisis Alexane ou Clémence :','Clémence');if(pupil===null)return;if(!['Alexane','Clémence'].includes(pupil))return alert('Choisis exactement Alexane ou Clémence.');const uid=parentUIDs[pupil];if(!uid)return alert(`UID de ${pupil} manquant. Renseigne-le dans Gestion des ressources.`);const mat=prompt('Matière :',x.matiere);if(mat===null)return;if(!subjects.includes(mat))return alert('Matière non reconnue.');const chapter=prompt('Titre EXACT du chapitre de destination :');if(chapter===null)return;if(!chapter.trim())return alert('Chapitre obligatoire.');const cat=prompt('Rubrique : cours, exercices, corriges, memos, revisions ou videos :','cours');if(cat===null)return;if(!resourceCategories.includes(cat))return alert('Rubrique inconnue.');if(cat==='revisions'&&(x.type!=='fichier'||!/\.html?(?:\.txt)?$/i.test(x.fichier)))return alert('La révision complète demande un fichier HTML.');if(!confirm(`Publier « ${x.title} » pour ${pupil} → ${mat} → ${chapter} → ${cat} ?`))return;
- try{let blob,name,ctype;if(x.type==='lien'){// Lien enregistré comme fiche texte : aucun téléchargement ni intégration automatique de Reel.
- blob=new Blob([`${x.title}\n${x.lien}\n\n${x.commentaire}`],{type:'text/plain'});name=`lien-${slug(x.title)}.txt`;ctype='text/plain'}else{const path=x.fichier;const {data,error}=await client.storage.from(aeLibBucket).download(path);if(error)throw error;blob=data;name=path.split('/').pop();ctype=/\.html?\.txt$/i.test(name)?'text/plain':(data.type||'application/octet-stream')}
- const dest=`${resourcePath(uid,mat,chapter.trim(),cat)}/${Date.now()}-${Math.random().toString(36).slice(2,8)}-${name}`;const {error}=await client.storage.from(resourcesBucket).upload(dest,blob,{contentType:ctype,upsert:false});if(error)throw error;aeLibMsg(`Publié pour ${pupil} dans ${mat} / ${chapter}. L'original reste en bibliothèque.`)}catch(e){aeLibMsg('Publication impossible : '+aeLibError(e))}}
+// V14.2 : choix de destination sans saisie du titre exact d'un chapitre.
+async function aePubChapters(pupil,mat){
+ const uid=parentUIDs[pupil];if(!uid)throw Error(`Identifiant de ${pupil} manquant. Renseigne-le dans Gestion des ressources.`);
+ const {paths,errors}=await listResourcesRecursive(`${uid}/${slug(mat)}`);
+ if(errors.length)throw Error(errors.join('; '));
+ const chapters=new Map();for(const path of paths){const p=path.split('/');if(p.length>=5&&!chapters.has(p[2]))chapters.set(p[2],p[2].replace(/-/g,' '));}
+ for(const l of load(pupil).lessons.filter(l=>l.subject===mat&&!(load(pupil).archivedLessons||[]).includes(l.id)))if(!chapters.has(slug(l.title)))chapters.set(slug(l.title),l.title);
+ return [...chapters].map(([value,label])=>({value,label})).sort((a,b)=>a.label.localeCompare(b.label,'fr'));
+}
+async function aeLibPublish(x){
+ if(!isParent())return;
+ document.getElementById('aePubBackdrop')?.remove();
+ const overlay=document.createElement('div');overlay.id='aePubBackdrop';overlay.className='ae-pub-backdrop';
+ const dialog=document.createElement('section');dialog.className='ae-pub-dialog';dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-label','Publier une ressource');
+ dialog.innerHTML=`<h2>📤 Publier une ressource</h2><p class="muted">${safe(x.title)} — L’original restera dans ta bibliothèque privée.</p>
+ <label>1. Pour quelle élève ?</label><select id="aePubPupil"><option>Clémence</option><option>Alexane</option></select>
+ <label class="ae-pub-checkbox"><input id="aePubBoth" type="checkbox"> Publier pour les deux filles</label>
+ <label>2. Matière</label><select id="aePubSubject">${subjects.map(v=>`<option value="${safe(v)}" ${v===x.matiere?'selected':''}>${safe(v)}</option>`).join('')}</select>
+ <label>3. Chapitre existant</label><select id="aePubChapter"><option value="">Chargement des chapitres…</option></select>
+ <p class="hint">Seuls les chapitres existants sont proposés. Pour un nouveau chapitre, crée-le d’abord dans Gestion des ressources.</p>
+ <label>4. Rubrique</label><select id="aePubCategory"><option value="videos">📺 Vidéos / Liens</option><option value="cours">📖 Cours</option><option value="exercices">✏️ Exercices</option><option value="corriges">✅ Corrigés</option><option value="memos">📝 Mémos / Synthèses</option>${x.type==='fichier'&&/\.html?(?:\.txt)?$/i.test(x.fichier)?'<option value="revisions">⭐ Révision complète</option>':''}</select>
+ <div class="ae-pub-preview" id="aePubPreview" aria-live="polite"></div><p id="aePubError" class="ae-pub-error" role="status"></p>
+ <div class="ae-pub-footer"><button type="button" class="secondary" id="aePubCancel">Annuler</button><button type="button" class="primary" id="aePubConfirm" disabled>📤 Publier dans ce chapitre</button></div>`;
+ overlay.append(dialog);document.body.append(overlay);
+ const get=id=>dialog.querySelector('#'+id);const pupil=get('aePubPupil'),both=get('aePubBoth'),mat=get('aePubSubject'),chapter=get('aePubChapter'),cat=get('aePubCategory'),go=get('aePubConfirm'),error=get('aePubError');
+ const close=()=>{document.removeEventListener('keydown',onKey);overlay.remove()};const onKey=e=>{if(e.key==='Escape')close()};document.addEventListener('keydown',onKey);get('aePubCancel').onclick=close;
+ overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
+ const targets=()=>both.checked?['Alexane','Clémence']:[pupil.value];
+ let seq=0;
+ async function refresh(){const id=++seq;go.disabled=true;error.textContent='';chapter.replaceChildren(new Option('Chargement…',''));const chosen=targets();
+ try{const result=await Promise.all(chosen.map(n=>aePubChapters(n,mat.value)));if(id!==seq)return;
+ // Publier pour les deux filles uniquement dans un chapitre present chez chacune.
+ const choices=chosen.length===1?result[0]:result[0].filter(c=>result[1].some(d=>d.value===c.value));
+ chapter.replaceChildren(new Option(choices.length?'Choisir un chapitre…':'Aucun chapitre commun existant',''));
+ for(const c of choices)chapter.add(new Option(c.label,c.value));
+ if(!choices.length)error.textContent='Crée ou publie d’abord un document dans un chapitre depuis Gestion des ressources.';
+ }catch(e){if(id!==seq)return;chapter.replaceChildren(new Option('Erreur de chargement',''));error.textContent=e.message}
+ update();}
+ function update(){get('aePubPreview').textContent=`Destination : ${targets().join(' et ')} → ${mat.value} → ${chapter.selectedOptions[0]?.text||'Choisir un chapitre'} → ${cat.selectedOptions[0]?.text||''}`;go.disabled=!chapter.value;}
+ pupil.onchange=refresh;both.onchange=()=>{pupil.disabled=both.checked;refresh()};mat.onchange=refresh;chapter.onchange=update;cat.onchange=update;
+ go.onclick=async()=>{if(!chapter.value)return;const selected=targets(),destination=chapter.value,subjectName=mat.value,category=cat.value;
+ if(!confirm(`Publier « ${x.title} » pour ${selected.join(' et ')} dans ${subjectName} / ${chapter.selectedOptions[0].text} / ${cat.selectedOptions[0].text} ?`))return;
+ go.disabled=true;get('aePubCancel').disabled=true;error.textContent='Publication en cours…';let done=0;
+ try{let blob,name,ctype;
+ if(x.type==='lien'&&category==='videos'){blob=new Blob([JSON.stringify({title:x.title,url:x.lien,note:x.commentaire||''})],{type:'application/json'});name=`lien-${slug(x.title)}.link.json`;ctype='application/json'}
+ else if(x.type==='lien'){blob=new Blob([`${x.title}\n${x.lien}\n\n${x.commentaire||''}`],{type:'text/plain'});name=`lien-${slug(x.title)}.txt`;ctype='text/plain'}
+ else{const {data,error:downloadError}=await client.storage.from(aeLibBucket).download(x.fichier);if(downloadError)throw downloadError;blob=data;name=x.fichier.split('/').pop();ctype=/\.html?\.txt$/i.test(name)?'text/plain':(data.type||'application/octet-stream')}
+ for(const n of selected){const uid=parentUIDs[n];if(!uid)throw Error(`Identifiant de ${n} manquant`);const dest=`${resourcePath(uid,subjectName,destination,category)}/${Date.now()}-${Math.random().toString(36).slice(2,8)}-${name}`;
+ const {error:uploadError}=await client.storage.from(resourcesBucket).upload(dest,blob,{contentType:ctype,upsert:false});if(uploadError)throw Error(`${n} : ${uploadError.message}`);done++}
+ aeLibMsg(`✅ Publié pour ${selected.join(' et ')} dans ${subjectName} / ${chapter.selectedOptions[0].text}. L’original reste en bibliothèque.`);close();
+ }catch(e){error.textContent=`Échec après ${done} publication(s) : ${aeLibError(e)}`;get('aePubCancel').disabled=false;go.disabled=false;}};
+ refresh();
+}
 const aeV14ParentView=parentView;
 parentView=function(){aeV14ParentView();if(!isParent())return;const nav=document.querySelector('.parent-nav-tabs');if(!nav)return;const button=document.createElement('button');button.id='parentTabLibrary';button.type='button';button.className='parent-nav-tab';button.textContent='📚 Ma bibliothèque';button.setAttribute('aria-selected','false');nav.appendChild(button);const content=document.createElement('div');content.id='parentTabLibraryContent';content.className='hidden';app.appendChild(content);button.onclick=()=>{parentActiveTab='library';document.getElementById('parentTabHomeContent').classList.add('hidden');document.getElementById('parentTabResourcesContent').classList.add('hidden');content.classList.remove('hidden');nav.querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-selected',String(b===button))});aeLibOpen()};for(const id of ['parentTabHome','parentTabResources'])document.getElementById(id).addEventListener('click',()=>{content.classList.add('hidden');button.classList.remove('active');button.setAttribute('aria-selected','false')})};
 
