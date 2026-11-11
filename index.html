@@ -97,7 +97,7 @@ h1,h2,h3,.chapter-title{color:#173a70}.eyebrow{color:#376ab2}
 .aen-row{border:1px solid #dae6f7;background:#f7faff;border-radius:12px;padding:13px;margin:10px 0;text-align:left;width:100%;display:block}
 .aen-row strong{display:block;color:#173a70;margin-bottom:6px}.aen-row small{color:#576b8b}.aen-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
 @media(max-width:590px){.ae15-nav button{padding:11px 3px;font-size:11px}.aen-overlay{padding-top:25px}}
-</style></head><body><header><div class="wrap top"><div class="brand" aria-label="Apprendre Ensemble">🎓</div><div class="header-actions"><button id="headerHome" class="header-auth outline hidden" type="button">🏠 Mon accueil</button><button id="headerChat" class="header-auth outline hidden" type="button" data-act="chat">💬 Messages <span id="headerUnread" class="hidden" aria-live="polite"></span></button><span id="headerProfile" class="header-profile">Alexane</span><button id="headerLogin" data-act="settings" class="header-auth">Se connecter</button><button id="headerLogout" data-act="logout" class="header-auth outline hidden">Se déconnecter</button></div></div></header><main class="wrap"><section class="hero"><div class="eyebrow">Bibliothèque pédagogique · Seconde</div><h1 id="welcome"></h1><p id="description" class="muted"></p></section><div id="app"></div></main><footer class="wrap">© 2026 – Apprendre Ensemble | Plateforme familiale de révision</footer><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script>
+.ael-panel{background:#fff;border:1px solid #dce5f2;border-radius:17px;padding:20px;margin-bottom:18px}.ael-panel h2{color:#234877}.ael-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ael-wide{grid-column:1/-1}.ael-grid label{display:block;font-weight:700;font-size:13px;margin:5px 0}.ael-grid input,.ael-grid select{width:100%;border:1px solid #cad7e9;border-radius:9px;padding:10px;min-height:44px}.ael-actions{display:flex;flex-wrap:wrap;gap:8px;margin:13px 0}.ael-actions button{border-radius:10px;padding:10px 13px;font-size:13px}.ael-green{background:#e3f7eb;color:#176b42}.ael-red{background:#fff0f1;color:#a52842}.ael-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:12px}.ael-card{background:#fff;border:1px solid #dce5f2;border-radius:12px;padding:14px}.ael-card h3{font-size:16px;margin:0 0 8px}.ael-card p{font-size:13px;color:#64758e}.ael-folder{border:1px solid #dce5f2;border-radius:12px;margin:9px 0;padding:10px}.ael-folder summary{cursor:pointer;font-weight:700;color:#254570}@media(max-width:650px){.ael-grid{grid-template-columns:1fr}.ael-wide{grid-column:auto}.ael-panel{padding:14px}}</style></head><body><header><div class="wrap top"><div class="brand" aria-label="Apprendre Ensemble">🎓</div><div class="header-actions"><button id="headerHome" class="header-auth outline hidden" type="button">🏠 Mon accueil</button><button id="headerChat" class="header-auth outline hidden" type="button" data-act="chat">💬 Messages <span id="headerUnread" class="hidden" aria-live="polite"></span></button><span id="headerProfile" class="header-profile">Alexane</span><button id="headerLogin" data-act="settings" class="header-auth">Se connecter</button><button id="headerLogout" data-act="logout" class="header-auth outline hidden">Se déconnecter</button></div></div></header><main class="wrap"><section class="hero"><div class="eyebrow">Bibliothèque pédagogique · Seconde</div><h1 id="welcome"></h1><p id="description" class="muted"></p></section><div id="app"></div></main><footer class="wrap">© 2026 – Apprendre Ensemble | Plateforme familiale de révision</footer><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script><script>
 const subjects=['Mathématiques','Physique-Chimie','SVT','Français','Histoire-Géographie','Anglais','Espagnol','SES','SNT','Autre'];
 const icons={'Mathématiques':'📐','Physique-Chimie':'⚗️','SVT':'🌿','Français':'📚','Histoire-Géographie':'🌍','Anglais':'💬','Espagnol':'🗣️','SES':'📈','SNT':'💻','Autre':'🗂️'};
 const blocks=[['cours','📖','Leçon'],['exercices','✏️','Exercices'],['corrige','✅','Corrigé'],['memo','📝','Mémo / Synthèse']];
@@ -1170,6 +1170,116 @@ async function aenVisit(item,button){
   }
  }catch(e){alert('Ouverture impossible : '+(e.message||e))}finally{button.disabled=false}
 }
+
+
+// LAB Parent - interface à deux blocs raccordée aux données Supabase existantes.
+const aelPrefix='[[AEL1:';
+function aelDecode(raw){
+ const str=String(raw||'');
+ if(!str.startsWith(aelPrefix))return {chapter:'Sans chapitre',ranged:true,note:str};
+ const end=str.indexOf(']]\n');if(end<0)return {chapter:'Sans chapitre',ranged:true,note:str};
+ try{const obj=JSON.parse(decodeURIComponent(str.slice(aelPrefix.length,end)));return {chapter:obj.chapter||'Sans chapitre',ranged:obj.ranged!==false,note:str.slice(end+3)}}
+ catch{return {chapter:'Sans chapitre',ranged:true,note:str}}
+}
+function aelEncode(chapter,ranged,note){return aelPrefix+encodeURIComponent(JSON.stringify({chapter,ranged}))+']]\n'+(note||'')}
+function aelRecord(r){const m=aelDecode(r.commentaire);return {...r,title:r.titre,mat:r.matiere,kind:r.type,url:r.lien,commentaire:m.note,note:m.note,chapter:m.chapter,ranged:m.ranged}}
+function aelValues(){return {title:document.getElementById('aeLibTitle').value.trim(),mat:document.getElementById('aeLibSubject').value,chapter:document.getElementById('aelChapter').value.trim(),type:document.getElementById('aeLibType').value,url:document.getElementById('aeLibUrl').value.trim(),file:document.getElementById('aeLibFile').files[0],note:document.getElementById('aeLibNote').value.trim()}}
+function aelReset(){for(const id of ['aeLibTitle','aeLibUrl','aeLibFile','aeLibNote','aelChapter'])document.getElementById(id).value=''}
+async function aelSave(ranged){
+ if(!isParent())return null;
+ const d=aelValues();
+ if(!d.chapter)return aeLibMsg('⚠️ Indique le chapitre.'),null;
+ if(d.type==='lien'){try{const u=new URL(d.url);if(!['http:','https:'].includes(u.protocol))throw Error()}catch{return aeLibMsg('⚠️ Colle un lien Internet complet.'),null}}
+ else if(!d.file)return aeLibMsg('⚠️ Choisis un fichier.'),null;
+ else if(d.file.size>20*1024*1024)return aeLibMsg('⚠️ Fichier limité à 20 Mo.'),null;
+ else if(!/\.(pdf|docx?|html?|txt|png|jpe?g|webp|mp4|webm)$/i.test(d.file.name))return aeLibMsg('⚠️ Format non accepté.'),null;
+ let path='';
+ try{
+  if(d.file&&d.type==='fichier'){
+   const filename=d.file.name.replace(/[^a-zA-Z0-9._-]/g,'_').slice(-100);
+   const html=/\.html?$/i.test(filename);
+   path=currentId()+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,9)+'-'+(html?filename+'.txt':filename);
+   const blob=html?new Blob([await d.file.text()],{type:'text/plain'}):d.file;
+   const {error}=await client.storage.from(aeLibBucket).upload(path,blob,{contentType:html?'text/plain':d.file.type||'application/octet-stream',upsert:false});if(error)throw error
+  }
+  const row={parent_id:currentId(),titre:d.title||(d.type==='lien'?d.url.slice(0,70):d.file.name),matiere:d.mat,type:d.type,lien:d.type==='lien'?d.url:'',commentaire:aelEncode(d.chapter,ranged,d.note),fichier:path,dossier_id:null};
+  const {data,error}=await client.from('ae_bibliotheque').insert(row).select('id,created_at,parent_id,titre,matiere,type,lien,commentaire,fichier,dossier_id').single();
+  if(error)throw error;
+  aelReset();await aeLibLoad(false);aeLibMsg(ranged?'✅ Rangé dans '+d.mat+' → '+d.chapter:'✅ Ajouté au bloc 1 : À ranger');return aelRecord(data)
+ }catch(e){if(path)await client.storage.from(aeLibBucket).remove([path]);aeLibMsg('⚠️ '+(e.message||e));return null}
+}
+async function aelRanger(x){
+ const row={commentaire:aelEncode(x.chapter||'Sans chapitre',true,x.commentaire||'')};
+ const {error}=await client.from('ae_bibliotheque').update(row).eq('id',x.id).eq('parent_id',currentId());
+ if(error)return aeLibMsg('⚠️ '+error.message);
+ await aeLibLoad(false);aeLibMsg('✅ '+x.title+' rangé dans '+x.matiere+' → '+x.chapter)
+}
+async function aelFormAction(action){
+ if(action==='clear'){aelReset();return aeLibMsg('Saisie effacée.')}
+ if(action==='open'){
+  const d=aelValues();
+  try{if(d.type==='lien'){const u=new URL(d.url);if(!['http:','https:'].includes(u.protocol))throw Error('Lien invalide');window.open(u.href,'_blank','noopener,noreferrer')}
+  else if(d.file){const blobUrl=URL.createObjectURL(d.file);window.open(blobUrl,'_blank','noopener,noreferrer');setTimeout(()=>URL.revokeObjectURL(blobUrl),60000)}
+  else throw Error('Choisis un fichier.')}catch(e){aeLibMsg(e.message)}return
+ }
+ const x=await aelSave(action==='ranger');if(!x)return;
+ if(action==='send')await ae15SendFromLibrary(x);
+ if(action==='publish')await aeLibPublish(x)
+}
+function aelCard(x,ranged){
+ const card=document.createElement('article');card.className='ael-card';
+ const title=document.createElement('h3');title.textContent=(x.type==='lien'?'🔗 ':'📄 ')+x.title;
+ const meta=document.createElement('p');meta.textContent=x.matiere+' → '+x.chapter;
+ const buttons=document.createElement('div');buttons.className='ael-actions';
+ const add=(name,fn,style='secondary')=>{const b=document.createElement('button');b.textContent=name;b.className=style;b.onclick=fn;buttons.append(b)};
+ add('📤 Envoyer',()=>ae15SendFromLibrary(x),'primary');add('🔗 Ouvrir',()=>aeLibOpenItem(x));
+ if(!ranged)add('📁 Ranger',()=>aelRanger(x),'ael-green');
+ add('📚 Publier',()=>aeLibPublish(x));add('✕ Supprimer',()=>aeLibDelete(x),'ael-red');
+ card.append(title,meta,buttons);return card
+}
+function aelRender(){
+ const pending=document.getElementById('aelPending'),folders=document.getElementById('aelFolders');if(!pending||!folders)return;
+ pending.replaceChildren();folders.replaceChildren();
+ const q=(document.getElementById('aeLibSearch').value||'').toLocaleLowerCase();
+ const f=document.getElementById('aeLibFilter').value;
+ const all=aeLibItems.filter(x=>(!f||x.matiere===f)&&[x.title,x.matiere,x.chapter,x.commentaire].join(' ').toLocaleLowerCase().includes(q));
+ const waiting=all.filter(x=>!x.ranged);document.getElementById('aelCount').textContent=waiting.length;
+ for(const x of waiting)pending.append(aelCard(x,false));
+ if(!waiting.length)pending.textContent='Aucune ressource en attente de rangement.';
+ const mats=new Map();
+ for(const x of all.filter(x=>x.ranged)){if(!mats.has(x.matiere))mats.set(x.matiere,new Map());const ch=mats.get(x.matiere);if(!ch.has(x.chapter))ch.set(x.chapter,[]);ch.get(x.chapter).push(x)}
+ if(!mats.size)folders.textContent='Bibliothèque vide.';
+ for(const [mat,chapters] of [...mats].sort(([a],[b])=>a.localeCompare(b,'fr'))){
+  const group=document.createElement('details');group.className='ael-folder';group.open=true;
+  const heading=document.createElement('summary');heading.textContent='📚 '+mat;group.append(heading);
+  for(const [ch,items] of [...chapters].sort(([a],[b])=>a.localeCompare(b,'fr'))){
+   const sub=document.createElement('details');sub.className='ael-folder';sub.open=true;
+   const title=document.createElement('summary');title.textContent='📁 '+ch+' ('+items.length+')';sub.append(title);
+   const cards=document.createElement('div');cards.className='ael-cards';for(const x of items)cards.append(aelCard(x,true));
+   sub.append(cards);group.append(sub)
+  }folders.append(group)
+ }
+}
+aeLibHtml=function(){return "<section class=\"ael-panel\"><h2>➕ Ajouter une ressource</h2><p>Un lien Internet ou un document — matière et chapitre une seule fois.</p><div class=\"ael-grid\"><div class=\"ael-wide\"><label>Type</label><select id=\"aeLibType\"><option value=\"lien\">Lien / Reel / vidéo Internet</option><option value=\"fichier\">Document : PDF, Word, photo, vidéo</option></select></div><div class=\"ael-wide\" id=\"aeLibUrlBox\"><label>Coller le lien</label><input id=\"aeLibUrl\" placeholder=\"https://www.facebook.com/reel/...\" type=\"url\"></div><div class=\"ael-wide hidden\" id=\"aeLibFileBox\"><label>Choisir un document (20 Mo maximum)</label><input id=\"aeLibFile\" type=\"file\" accept=\".pdf,.doc,.docx,.html,.htm,.txt,.png,.jpg,.jpeg,.webp,.mp4,.webm,image/*\"></div><div class=\"ael-wide\"><label>Titre (facultatif)</label><input id=\"aeLibTitle\" maxlength=\"140\"></div><div><label>Matière</label><select id=\"aeLibSubject\"></select></div><div><label>Chapitre</label><input id=\"aelChapter\" placeholder=\"Ex. Les vecteurs\" maxlength=\"120\"></div><div class=\"ael-wide\"><label>Message (facultatif)</label><textarea id=\"aeLibNote\"></textarea></div></div><div class=\"ael-actions\"><button class=\"secondary\" data-ael=\"add\">➕ Ajouter</button><button class=\"primary\" data-ael=\"send\">📤 Envoyer</button><button class=\"secondary\" data-ael=\"open\">🔗 Ouvrir</button><button class=\"ael-green\" data-ael=\"ranger\">📁 Ranger</button><button class=\"secondary\" data-ael=\"publish\">📚 Publier</button><button class=\"ael-red\" data-ael=\"clear\">✕ Supprimer</button></div><p id=\"aeLibStatus\" aria-live=\"polite\"></p></section><section class=\"ael-panel\"><h2>🟡 À ranger — <span id=\"aelCount\">0</span></h2><p>Après « Ranger », la ressource disparaît de ce bloc.</p><div id=\"aelPending\" class=\"ael-cards\"></div></section><section class=\"ael-panel\"><h2>📚 Ma bibliothèque</h2><p>Ressources classées par matière et chapitre.</p><div class=\"ael-grid\"><div><label>Rechercher</label><input id=\"aeLibSearch\" placeholder=\"Titre ou chapitre\"></div><div><label>Matière</label><select id=\"aeLibFilter\"><option value=\"\">Toutes les matières</option></select></div></div><div class=\"ael-actions\"><button class=\"secondary\" id=\"aeLibRefresh\">↻ Actualiser</button></div><div id=\"aelFolders\"></div></section>"};
+aeLibOpen=function(){
+ if(!isParent())return;const root=document.getElementById('parentTabLibraryContent');if(!root)return;
+ root.innerHTML=aeLibHtml();
+ for(const subject of subjects){document.getElementById('aeLibSubject').add(new Option(subject));document.getElementById('aeLibFilter').add(new Option(subject))}
+ document.getElementById('aeLibType').onchange=e=>{const file=e.target.value==='fichier';document.getElementById('aeLibFileBox').classList.toggle('hidden',!file);document.getElementById('aeLibUrlBox').classList.toggle('hidden',file)};
+ for(const b of root.querySelectorAll('[data-ael]'))b.onclick=()=>aelFormAction(b.dataset.ael);
+ document.getElementById('aeLibRefresh').onclick=()=>aeLibLoad();
+ document.getElementById('aeLibSearch').oninput=aelRender;document.getElementById('aeLibFilter').onchange=aelRender;
+ aeLibLoad()
+};
+aeLibRender=aelRender;
+aeLibLoad=async function(announce=true){
+ if(!isParent())return;if(announce)aeLibMsg('Synchronisation Supabase…');
+ try{let rows=[],i=0;while(true){const {data,error}=await client.from('ae_bibliotheque').select('id,created_at,parent_id,titre,matiere,type,lien,commentaire,fichier,dossier_id').eq('parent_id',currentId()).order('created_at',{ascending:false}).range(i,i+499);if(error)throw error;rows.push(...data);if(data.length<500)break;i+=500}
+ aeLibItems=rows.map(aelRecord);aelRender();if(announce)aeLibMsg('✅ '+rows.length+' ressources synchronisées.')
+ }catch(e){aeLibMsg('⚠️ Synchronisation impossible : '+e.message)}
+};
+// Ancienne décoration des dossiers désactivée : l'interface LAB remplace la bibliothèque Parent uniquement.
+ae15DecorateLibrary=async function(){};
 
 init();render();
 </script></body></html>
