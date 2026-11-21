@@ -1133,10 +1133,47 @@ async function ae15Preview(item,slot){slot.replaceChildren();try{
  }
  }catch(e){slot.textContent='Impossible d’ouvrir : '+ae15Error(e)}
 }
+async function ae15OpenHtmlFullscreen(item){
+ const prior=document.getElementById('ae15HtmlFullscreen');if(prior)prior.remove();
+ const overlay=document.createElement('div');
+ overlay.id='ae15HtmlFullscreen';
+ overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
+ overlay.setAttribute('aria-label','Exercice HTML : '+item.titre);
+ Object.assign(overlay.style,{position:'fixed',inset:'0',zIndex:'12000',background:'#fff',display:'flex',flexDirection:'column',width:'100%',height:'100vh',maxHeight:'100dvh'});
+ const head=document.createElement('div');
+ Object.assign(head.style,{flex:'0 0 auto',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'12px',padding:'max(10px, env(safe-area-inset-top)) 14px 10px',background:'#f3f7ff',borderBottom:'1px solid #cfddf0'});
+ const heading=document.createElement('strong');heading.textContent=item.titre;Object.assign(heading.style,{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontSize:'14px',color:'#173a70'});
+ const back=document.createElement('button');back.type='button';back.textContent='← Retour à mes ressources';back.className='secondary';Object.assign(back.style,{flexShrink:'0',fontSize:'13px',padding:'10px'});
+ const area=document.createElement('div');Object.assign(area.style,{flex:'1 1 auto',minHeight:'0',display:'flex',flexDirection:'column'});
+ area.textContent='Ouverture du QCM…';
+ head.append(heading,back);overlay.append(head,area);
+ const oldOverflow=document.body.style.overflow;
+ const previousFocus=document.activeElement;
+ function close(){document.removeEventListener('keydown',onKey);overlay.remove();document.body.style.overflow=oldOverflow;if(previousFocus&&previousFocus.isConnected)previousFocus.focus()}
+ function onKey(ev){if(ev.key==='Escape'){ev.preventDefault();close()}}
+ back.onclick=close;document.addEventListener('keydown',onKey);
+ document.body.append(overlay);document.body.style.overflow='hidden';back.focus();
+ try{
+  const {data,error}=await client.storage.from(ae15Bucket).createSignedUrl(item.fichier,600);
+  if(error)throw error;
+  const response=await fetch(data.signedUrl,{credentials:'omit'});
+  if(!response.ok)throw Error('Lecture impossible ('+response.status+').');
+  const html=await response.text();
+  if(html.length>6*1024*1024)throw Error('Fichier HTML trop volumineux pour la lecture intégrée.');
+  if(!overlay.isConnected)return;
+  const iframe=document.createElement('iframe');
+  iframe.title='QCM interactif : '+item.titre;
+  iframe.setAttribute('sandbox','allow-scripts allow-forms allow-modals');
+  iframe.referrerPolicy='no-referrer';
+  Object.assign(iframe.style,{width:'100%',height:'100%',flex:'1 1 auto',minHeight:'0',border:'0',background:'#fff'});
+  iframe.srcdoc=html;
+  area.replaceChildren(iframe);
+ }catch(e){if(overlay.isConnected)area.textContent='Impossible d’ouvrir le QCM : '+ae15Error(e)}
+}
 function ae15Card(x){
  const card=document.createElement('article');card.className='ae15-item';const banner=document.createElement('div');banner.className='ae15-banner';banner.textContent=x.expediteur_id===x.eleve_id?'📎 Ma ressource':'💡 J’ai trouvé ça intéressant pour toi';
  const title=document.createElement('h3');title.textContent=x.titre;const desc=document.createElement('p');desc.textContent=x.commentaire||'';
- const open=document.createElement('button');open.className='ae15-open';open.textContent=x.type==='lien'?'▶ Regarder / ouvrir le lien':'👁 Voir le document';const viewer=document.createElement('div');viewer.className='ae15-viewer hidden';open.onclick=()=>{viewer.classList.toggle('hidden');if(!viewer.classList.contains('hidden'))ae15Preview(x,viewer)};
+ const open=document.createElement('button');open.className='ae15-open';open.textContent=x.type==='lien'?'▶ Regarder / ouvrir le lien':'👁 Voir le document';const viewer=document.createElement('div');viewer.className='ae15-viewer hidden';open.onclick=()=>{if(x.type==='fichier'&&/\.html?$/i.test(x.nom_fichier||x.fichier||'')){ae15OpenHtmlFullscreen(x);return}viewer.classList.toggle('hidden');if(!viewer.classList.contains('hidden'))ae15Preview(x,viewer)};
  const row=document.createElement('div');row.className='ae15-decisions';
  for(const [label,value,cls] of [['En attente de classement','attente','wait'],['Je le classe','classer','keep'],['Je garde pas','jete','no']]){const b=document.createElement('button');b.textContent=label;b.className=cls;b.onclick=()=>{if(value==='classer')ae15ChooseChapter(x);else ae15SetStatus(x,value)};row.append(b)}
  card.append(banner,title,desc,open,viewer,row);return card;
