@@ -984,7 +984,7 @@ async function aeLibLoad(announce=true){
 }
 function aeLibRender(){const root=document.getElementById('aeLibList');if(!root)return;const q=(document.getElementById('aeLibSearch')?.value||'').toLocaleLowerCase(),f=document.getElementById('aeLibFilter')?.value||'';const items=aeLibItems.filter(x=>(!f||x.matiere===f)&&[x.title,x.commentaire,x.matiere].join(' ').toLocaleLowerCase().includes(q));root.replaceChildren();if(!items.length){root.innerHTML='<p class="muted">Aucune ressource à afficher.</p>';return}for(const x of items){const card=document.createElement('article');card.className='ae-lib-card';const title=document.createElement('h3');title.textContent=(x.type==='lien'?'🔗 ':'📎 ')+x.title;const sub=document.createElement('p');sub.className='ae-lib-stat';sub.textContent=`${x.matiere} · ${x.type==='lien'?'Lien':'Fichier'} · En réserve`;const note=document.createElement('p');note.textContent=x.commentaire||'';const controls=document.createElement('div');controls.className='ae-lib-controls';const open=document.createElement('button');open.className='secondary';open.textContent='👁 Ouvrir';open.onclick=()=>aeLibOpenItem(x);const pub=document.createElement('button');pub.className='secondary';pub.textContent='📤 Publier';pub.onclick=()=>aeLibPublish(x);const del=document.createElement('button');del.className='danger';del.textContent='🗑 Supprimer';del.onclick=()=>aeLibDelete(x);controls.append(open,pub,del);card.append(title,sub,note,controls);root.append(card)}}
 async function aeLibOpenItem(x){
- try{if(x.type==='lien'){const u=new URL(x.lien);if(!['https:','http:'].includes(u.protocol))throw Error('Adresse non autorisée');window.open(u.href,'_blank','noopener,noreferrer');return;}
+ try{if(x.type==='lien'){const u=new URL(x.lien);if(!['https:','http:'].includes(u.protocol))throw Error('Adresse non autorisée');aeOpenExternalTab(u.href);return;}
  const {data,error}=await client.storage.from(aeLibBucket).download(x.fichier);if(error)throw error;
  if(/\.html?\.txt$/i.test(x.fichier)){const html=await data.text();const url=URL.createObjectURL(new Blob([html],{type:'text/html'}));window.open(url,'_blank','noopener,noreferrer');setTimeout(()=>URL.revokeObjectURL(url),60000);}
  else {const url=URL.createObjectURL(data);window.open(url,'_blank','noopener,noreferrer');setTimeout(()=>URL.revokeObjectURL(url),60000);}
@@ -1109,10 +1109,19 @@ async function ae15SendStudent(){
 }
 async function ae15ListMine(){const {data,error}=await client.from('ae_partages').select('*').eq('eleve_id',currentId()).order('created_at',{ascending:false}).limit(500);if(error)throw error;return data||[]}
 function ae15Youtube(url){try{const u=new URL(url);if(u.hostname==='youtu.be')return u.pathname.split('/')[1];if(['youtube.com','www.youtube.com','m.youtube.com'].includes(u.hostname)){if(u.pathname==='/watch')return u.searchParams.get('v');if(u.pathname.startsWith('/shorts/')||u.pathname.startsWith('/embed/'))return u.pathname.split('/')[2]}}catch{}return null}
+// Ouvre les liens externes dans un onglet séparé, sans quitter Apprendre Ensemble.
+function aeOpenExternalTab(url){
+ const target=new URL(url,location.href);
+ if(!['https:','http:'].includes(target.protocol))throw Error('Adresse non autorisée');
+ const link=document.createElement('a');
+ link.href=target.href;link.target='_blank';link.rel='noopener noreferrer';
+ link.style.display='none';document.body.append(link);
+ link.click();link.remove();
+}
 async function ae15Preview(item,slot){slot.replaceChildren();try{
  if(item.type==='lien'){
-   const url=ae15Url(item.lien),vid=ae15Youtube(url);if(vid&&/^[a-zA-Z0-9_-]{11}$/.test(vid)){const frame=document.createElement('iframe');frame.src='https://www.youtube-nocookie.com/embed/'+vid;frame.title='Vidéo : '+item.titre;frame.allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';frame.allowFullscreen=true;frame.referrerPolicy='strict-origin-when-cross-origin';frame.className='ae15-frame';slot.append(frame);const fallback=document.createElement('button');fallback.className='secondary';fallback.textContent='Si la vidéo ne s’affiche pas : ouvrir YouTube ↗';fallback.onclick=()=>window.open(url,'_blank','noopener,noreferrer');slot.append(fallback)}
-   else{const msg=document.createElement('p');msg.textContent='Ce site peut empêcher la lecture intégrée. Le lien reste ici lorsque tu reviens.';const btn=document.createElement('button');btn.className='secondary';btn.textContent='Ouvrir le lien externe ↗';btn.onclick=()=>window.open(url,'_blank','noopener,noreferrer');slot.append(msg,btn)}
+   const url=ae15Url(item.lien),vid=ae15Youtube(url);if(vid&&/^[a-zA-Z0-9_-]{11}$/.test(vid)){const frame=document.createElement('iframe');frame.src='https://www.youtube-nocookie.com/embed/'+vid;frame.title='Vidéo : '+item.titre;frame.allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';frame.allowFullscreen=true;frame.referrerPolicy='strict-origin-when-cross-origin';frame.className='ae15-frame';slot.append(frame);const fallback=document.createElement('button');fallback.className='secondary';fallback.textContent='Si la vidéo ne s’affiche pas : ouvrir YouTube ↗';fallback.onclick=()=>aeOpenExternalTab(url);slot.append(fallback)}
+   else{const msg=document.createElement('p');msg.textContent='Ce site peut empêcher la lecture intégrée. Le lien reste ici lorsque tu reviens.';const btn=document.createElement('button');btn.className='secondary';btn.textContent='Ouvrir le lien externe ↗';btn.onclick=()=>aeOpenExternalTab(url);slot.append(msg,btn)}
  }else{
   const {data,error}=await client.storage.from(ae15Bucket).createSignedUrl(item.fichier,600);if(error)throw error;const url=data.signedUrl,name=item.nom_fichier||item.fichier||'';
   if(/\.(png|jpe?g|webp)$/i.test(name)){const im=document.createElement('img');im.src=url;im.alt=item.titre;im.className='ae15-inline-img';slot.append(im)}
@@ -1316,7 +1325,7 @@ async function aenVisit(item,button){
  if(!client||!authenticated()||isParent())return;
  button.disabled=true;let opened=false;
  try{
-  if(item.resource_url){const u=new URL(item.resource_url);if(!['https:','http:'].includes(u.protocol))throw Error('Adresse interdite');const tab=window.open(u.href,'_blank');if(!tab)throw Error('Autorise l’ouverture du lien dans ton navigateur.');tab.opener=null;opened=true}
+  if(item.resource_url){const u=new URL(item.resource_url);if(!['https:','http:'].includes(u.protocol))throw Error('Adresse interdite');aeOpenExternalTab(u.href);opened=true}
   else if(item.resource_path&&item.resource_bucket){
    const p=item.resource_path,b=item.resource_bucket;
    if(b===ae15Bucket&&/\.html?$/i.test(p)){
@@ -1326,7 +1335,7 @@ async function aenVisit(item,button){
    }
    else if(b===resourcesBucket&&aeIsHtmlResource(p)){await aeOpenHtmlResource(p);opened=true}
    else if(b===resourcesBucket&&/\/qcm-[^/]+\.json$/i.test(p)){const {data,error}=await client.storage.from(b).download(p);if(error)throw error;const quiz=validateQcm(JSON.parse(await data.text()));document.getElementById('aenOverlay')?.remove();openStudentQcm(quiz);opened=true}
-   else if(b===resourcesBucket&&/\.(link|youtube)\.json$/i.test(p)){const {data,error}=await client.storage.from(b).download(p);if(error)throw error;const rec=JSON.parse(await data.text());if(!rec.url)throw Error('Lien manquant');const u=new URL(rec.url);if(!['https:','http:'].includes(u.protocol))throw Error('Adresse interdite');const tab=window.open(u.href,'_blank');if(!tab)throw Error('Autorise les fenêtres de ton navigateur.');tab.opener=null;opened=true}
+   else if(b===resourcesBucket&&/\.(link|youtube)\.json$/i.test(p)){const {data,error}=await client.storage.from(b).download(p);if(error)throw error;const rec=JSON.parse(await data.text());if(!rec.url)throw Error('Lien manquant');const u=new URL(rec.url);if(!['https:','http:'].includes(u.protocol))throw Error('Adresse interdite');aeOpenExternalTab(u.href);opened=true}
    else{const {data,error}=await client.storage.from(b).createSignedUrl(p,600);if(error)throw error;const a=document.createElement('a');a.href=data.signedUrl;a.target='_blank';a.rel='noopener noreferrer';document.body.append(a);a.click();a.remove();opened=true}
   }else throw Error('Aucun document associé à cette notification.');
   if(opened){const {error}=await client.from('ae_notifications').delete().eq('id',item.id).eq('recipient_id',currentId());if(error)throw Error('Document ouvert, mais suppression de la notification impossible : '+error.message);
