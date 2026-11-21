@@ -1319,7 +1319,12 @@ async function aenVisit(item,button){
   if(item.resource_url){const u=new URL(item.resource_url);if(!['https:','http:'].includes(u.protocol))throw Error('Adresse interdite');const tab=window.open(u.href,'_blank');if(!tab)throw Error('Autorise l’ouverture du lien dans ton navigateur.');tab.opener=null;opened=true}
   else if(item.resource_path&&item.resource_bucket){
    const p=item.resource_path,b=item.resource_bucket;
-   if(b===resourcesBucket&&aeIsHtmlResource(p)){await aeOpenHtmlResource(p);opened=true}
+   if(b===ae15Bucket&&/\.html?$/i.test(p)){
+    document.getElementById('aenOverlay')?.remove();
+    await ae15OpenHtmlFullscreen({titre:item.titre||'Exercice HTML',fichier:p,nom_fichier:p.split('/').pop()});
+    opened=true;
+   }
+   else if(b===resourcesBucket&&aeIsHtmlResource(p)){await aeOpenHtmlResource(p);opened=true}
    else if(b===resourcesBucket&&/\/qcm-[^/]+\.json$/i.test(p)){const {data,error}=await client.storage.from(b).download(p);if(error)throw error;const quiz=validateQcm(JSON.parse(await data.text()));document.getElementById('aenOverlay')?.remove();openStudentQcm(quiz);opened=true}
    else if(b===resourcesBucket&&/\.(link|youtube)\.json$/i.test(p)){const {data,error}=await client.storage.from(b).download(p);if(error)throw error;const rec=JSON.parse(await data.text());if(!rec.url)throw Error('Lien manquant');const u=new URL(rec.url);if(!['https:','http:'].includes(u.protocol))throw Error('Adresse interdite');const tab=window.open(u.href,'_blank');if(!tab)throw Error('Autorise les fenêtres de ton navigateur.');tab.opener=null;opened=true}
    else{const {data,error}=await client.storage.from(b).createSignedUrl(p,600);if(error)throw error;const a=document.createElement('a');a.href=data.signedUrl;a.target='_blank';a.rel='noopener noreferrer';document.body.append(a);a.click();a.remove();opened=true}
