@@ -120,12 +120,39 @@ const save=(n,v)=>localStorage.setItem(key+n,JSON.stringify(v));
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const app=document.getElementById('app');let showWelcome=true;let user='Alexane',subject=null,lesson=null,cloudChapter=null,client=null,session=null,authEmail='',parentUIDs={Alexane:'',Clémence:''};
 const resourcesBucket='ressources-pedagogiques';const resourceCategories=['revisions','cours','exercices','corriges','memos','videos'];const publicSite='https://blbweb.github.io/CLEMALEX/';const bucket='documents eleves';const parentUserId='4a305a54-fcbf-427e-9294-4cf9b7eff101';const idsKey='ae_v6_student_uids';try{parentUIDs={...parentUIDs,...JSON.parse(localStorage.getItem(idsKey)||'{}')}}catch{};const cfg={url:'https://kkmaqrpwsidqxaooxpgk.supabase.co',key:'sb_publishable_z2brnR6VYjKoRf6Cc1JZuw_bEBSeXxa'};
-function init(){if(cfg.url&&cfg.key&&window.supabase){try{client=window.supabase.createClient(cfg.url,cfg.key);client.auth.getSession().then(({data})=>{session=data.session;if(isParent())user='Parent';render()}).catch(e=>message(e.message))}catch(e){message(e.message)}}}
+function init(){if(cfg.url&&cfg.key&&window.supabase){try{client=window.supabase.createClient(cfg.url,cfg.key);client.auth.getSession().then(({data})=>{session=data.session;if(isParent()){user='Parent'}else if(authenticated()){const mine=aeAccountProfile();if(mine){user=mine;showWelcome=false}else{showWelcome=true}}render()}).catch(e=>message(e.message))}catch(e){message(e.message)}}}
 function currentId(){return session?.user?.id||''}
 function message(t){const e=document.getElementById('msg');if(e)e.textContent=t}
 function authenticated(){return !!session}
 function isParent(){return authenticated()&&currentId()===parentUserId}
 function toolbar(){return ''}
+
+// Profil de navigation : mémorisé par identifiant Supabase (la sécurité reste assurée par les règles RLS).
+const aeProfileKey='ae_student_profile_by_uid_v1';
+function aeAccountProfile(){
+ if(!authenticated())return null;
+ if(isParent())return 'Parent';
+ const person=session.user;
+ const metadata=person.user_metadata||{};
+ const values=[metadata.ae_student_profile,metadata.prenom,metadata.first_name,metadata.given_name,metadata.name,metadata.full_name,person.email?.split('@')[0]];
+ for(const value of values){
+  const clean=String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  if(/(^|[^a-z])alexane([^a-z]|$)/.test(clean))return 'Alexane';
+  if(/(^|[^a-z])clemence([^a-z]|$)/.test(clean))return 'Clémence';
+ }
+ try{const saved=JSON.parse(localStorage.getItem(aeProfileKey)||'{}');if(['Alexane','Clémence'].includes(saved[currentId()]))return saved[currentId()]}catch{}
+ return null;
+}
+function aeRememberStudentProfile(name){
+ if(!authenticated()||isParent()||!['Alexane','Clémence'].includes(name))return;
+ try{const saved=JSON.parse(localStorage.getItem(aeProfileKey)||'{}');saved[currentId()]=name;localStorage.setItem(aeProfileKey,JSON.stringify(saved))}catch{}
+}
+function aeAvailableProfiles(){
+ if(!authenticated()||isParent())return ['Alexane','Clémence','Parent'];
+ const actual=aeAccountProfile();
+ return actual?[actual]:['Alexane','Clémence'];
+}
+
 function updateHeader(){
  document.body.classList.toggle('home-only',showWelcome);const homeBtn=document.getElementById('headerHome');if(homeBtn)homeBtn.classList.toggle('hidden',showWelcome);const chat=document.getElementById('headerChat');if(chat)chat.classList.toggle('hidden',!authenticated());const name=document.getElementById('headerProfile'),login=document.getElementById('headerLogin'),logout=document.getElementById('headerLogout');
  if(name){name.textContent=user==='Parent'?'Espace Parent':`Espace ${user}`;name.classList.toggle('hidden',showWelcome)}
@@ -133,7 +160,7 @@ function updateHeader(){
  if(logout)logout.classList.toggle('hidden',!authenticated());
  if(authenticated()&&currentId()!==unreadUser){unreadUser=currentId();displayUnread(0);setTimeout(refreshUnread,100)}else if(!authenticated()){unreadUser='';displayUnread(0)}
 }
-function render(){document.body.classList.toggle('parent-scope',!showWelcome&&user==='Parent');updateHeader();if(showWelcome){welcomeView();return;}document.getElementById('welcome').textContent=user==='Parent'?'Mon espace Parent':'';document.getElementById('description').textContent='';document.querySelector('.hero').classList.toggle('hidden',user!=='Parent');if(user==='Parent'){parentView();showUnreadBanner();return}const d=load(user);if(!subject){subjectsView(d);showUnreadBanner();return}if(cloudChapter)return cloudChapterView();if(!lesson){lessonsView(d);loadStudentResources();return}return detailView(d)}
+function render(){if(authenticated()&&!isParent()){const current=aeAccountProfile();if(current)user=current}document.body.classList.toggle('parent-scope',!showWelcome&&user==='Parent');updateHeader();if(showWelcome){welcomeView();return;}document.getElementById('welcome').textContent=user==='Parent'?'Mon espace Parent':'';document.getElementById('description').textContent='';document.querySelector('.hero').classList.toggle('hidden',user!=='Parent');if(user==='Parent'){parentView();showUnreadBanner();return}const d=load(user);if(!subject){subjectsView(d);showUnreadBanner();return}if(cloudChapter)return cloudChapterView();if(!lesson){lessonsView(d);loadStudentResources();return}return detailView(d)}
 function goHome(){if(isParent()&&typeof parentActiveTab!=='undefined')parentActiveTab='home';activeChat=null;subject=null;lesson=null;cloudChapter=null;showWelcome=!authenticated();if(isParent())user='Parent';render()}
 document.getElementById('headerHome').onclick=goHome;
 function welcomeView(){
@@ -525,7 +552,7 @@ function bindAvatar(){
 
 function settings(){
  updateHeader();
- app.innerHTML=`<button class="back" data-act="back-settings">← Retour</button><div class="panel authbox"><h2>🔐 Mon compte</h2><p class="muted">Les espaces élèves et Parent sont séparés dans la navigation.</p>${authenticated()?`<p class="status">Connecté : ${safe(session.user.email)}</p>`:''}<label>Ouvrir l’espace</label><select id="loginProfile"><option value="Alexane" ${user==='Alexane'?'selected':''}>Alexane</option><option value="Clémence" ${user==='Clémence'?'selected':''}>Clémence</option><option value="Parent" ${user==='Parent'?'selected':''}>Parent</option></select><label>E-mail</label><input id="email" type="email" autocomplete="username" placeholder="Ton adresse e-mail"><label>Mot de passe</label><input id="password" type="password" autocomplete="current-password" placeholder="Ton mot de passe"><div class="actions"><button class="primary" id="signin">Se connecter</button><button class="secondary" id="signout">Se déconnecter</button></div><div id="msg" class="status" aria-live="polite"></div><p class="hint">Le choix du profil ne donne pas d'autorisation supplémentaire : seuls les droits Supabase protègent les documents. Ne partage pas ton mot de passe.</p></div>`;
+ app.innerHTML=`<button class="back" data-act="back-settings">← Retour</button><div class="panel authbox"><h2>🔐 Mon compte</h2><p class="muted">Les espaces élèves et Parent sont séparés dans la navigation.</p>${authenticated()?`<p class="status">Connecté : ${safe(session.user.email)}</p>`:''}<label>Ouvrir l’espace</label><select id="loginProfile">${aeAvailableProfiles().map(n=>`<option value="${n}" ${n===aeAccountProfile()?'selected':''}>${n}</option>`).join('')}</select><label>E-mail</label><input id="email" type="email" autocomplete="username" placeholder="Ton adresse e-mail"><label>Mot de passe</label><input id="password" type="password" autocomplete="current-password" placeholder="Ton mot de passe"><div class="actions"><button class="primary" id="signin">Se connecter</button><button class="secondary" id="signout">Se déconnecter</button></div><div id="msg" class="status" aria-live="polite"></div><p class="hint">Le choix du profil ne donne pas d'autorisation supplémentaire : seuls les droits Supabase protègent les documents. Ne partage pas ton mot de passe.</p></div>`;
  document.getElementById('signin').onclick=async()=>{
   if(!client)return message('Connexion au service indisponible. Vérifie ta connexion Internet puis actualise la page.');
   const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value,desired=document.getElementById('loginProfile').value;
@@ -534,8 +561,11 @@ function settings(){
   const {data,error}=await client.auth.signInWithPassword({email,password});document.getElementById('password').value='';
   if(error)return message('Connexion refusée : '+error.message);
   session=data.session;
-  if(desired==='Parent'&&!isParent())return message('Ce compte ne possède pas les droits Parent. Choisis ton espace élève.');
-  user=isParent()?'Parent':desired;showWelcome=false;subject=null;lesson=null;cloudChapter=null;
+  if(desired==='Parent'&&!isParent()){await client.auth.signOut();session=null;return message('Ce compte ne possède pas les droits Parent.');}
+  const known=aeAccountProfile();
+  user=isParent()?'Parent':known||desired;
+  if(!isParent())aeRememberStudentProfile(user);
+  showWelcome=false;subject=null;lesson=null;cloudChapter=null;
   render();
  };
  document.getElementById('signout').onclick=logout;
@@ -915,7 +945,7 @@ parentView=function(){
  }
 };
 async function logout(){if(client)await client.auth.signOut();session=null;unreadUser='';displayUnread(0);user='Alexane';showWelcome=true;subject=null;lesson=null;cloudChapter=null;render()}
-document.body.addEventListener('click',e=>{const x=e.target.closest('button');if(!x)return;if(x.dataset.user){user=x.dataset.user;subject=null;lesson=null;cloudChapter=null;render()}else if(x.dataset.subject){subject=x.dataset.subject;lesson=null;cloudChapter=null;render()}else if(x.dataset.open){cloudChapter=null;lesson=x.dataset.open;subject=load(user).lessons.find(l=>l.id===lesson)?.subject;render()}else if(x.dataset.chapter){cloudChapter=x.dataset.chapter.replace(/-/g,' ');lesson=null;render()}else if(x.dataset.act==='back-subject'){subject=null;lesson=null;cloudChapter=null;render()}else if(x.dataset.act==='back-lesson'){lesson=null;cloudChapter=null;render()}else if(x.dataset.act==='settings'){settings()}else if(x.dataset.act==='chat'){chatView()}else if(x.dataset.act==='back-settings'){render()}else if(x.dataset.act==='logout'){logout()}});
+document.body.addEventListener('click',e=>{const x=e.target.closest('button');if(!x)return;if(x.dataset.user){if(authenticated()&&!isParent()&&x.dataset.user!==aeAccountProfile())return;user=x.dataset.user;subject=null;lesson=null;cloudChapter=null;render()}else if(x.dataset.subject){subject=x.dataset.subject;lesson=null;cloudChapter=null;render()}else if(x.dataset.open){cloudChapter=null;lesson=x.dataset.open;subject=load(user).lessons.find(l=>l.id===lesson)?.subject;render()}else if(x.dataset.chapter){cloudChapter=x.dataset.chapter.replace(/-/g,' ');lesson=null;render()}else if(x.dataset.act==='back-subject'){subject=null;lesson=null;cloudChapter=null;render()}else if(x.dataset.act==='back-lesson'){lesson=null;cloudChapter=null;render()}else if(x.dataset.act==='settings'){settings()}else if(x.dataset.act==='chat'){chatView()}else if(x.dataset.act==='back-settings'){render()}else if(x.dataset.act==='logout'){logout()}});
 try{const params=new URLSearchParams(location.search);const who=params.get('eleve'),mat=params.get('matiere');if(['Alexane','Clémence'].includes(who)&&subjects.includes(mat)){user=who;subject=mat;showWelcome=false}}catch{}
 // V14.1 — Bibliothèque synchronisée (table privée + bucket privé).
 // Les cours, QCM, messages et autres contenus existants restent inchangés.
