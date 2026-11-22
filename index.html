@@ -603,19 +603,23 @@ function bindAvatar(){
 
 function settings(){
  updateHeader();
- app.innerHTML=`<button class="back" data-act="back-settings">← Retour</button><div class="panel authbox"><h2>🔐 Mon compte</h2><p class="muted">Les espaces élèves et Parent sont séparés dans la navigation.</p>${authenticated()?`<p class="status">Connecté : ${safe(session.user.email)}</p>`:''}<label>Ouvrir l’espace</label><select id="loginProfile">${aeAvailableProfiles().map(n=>`<option value="${n}" ${n===aeAccountProfile()?'selected':''}>${n}</option>`).join('')}</select><label>E-mail</label><input id="email" type="email" autocomplete="username" placeholder="Ton adresse e-mail"><label>Mot de passe</label><input id="password" type="password" autocomplete="current-password" placeholder="Ton mot de passe"><div class="actions"><button class="primary" id="signin">Se connecter</button><button class="secondary" id="signout">Se déconnecter</button></div><div id="msg" class="status" aria-live="polite"></div><p class="hint">Le choix du profil ne donne pas d'autorisation supplémentaire : seuls les droits Supabase protègent les documents. Ne partage pas ton mot de passe.</p></div>`;
+ app.innerHTML=`<button class="back" data-act="back-settings">← Retour</button><div class="panel authbox"><h2>🔐 Mon compte</h2><p class="muted">Les espaces élèves et Parent sont séparés dans la navigation.</p>${authenticated()?`<p class="status">Connecté : ${safe(session.user.email)}</p>`:''}${isParent()?'<label for="loginProfile">Choisir l’espace à consulter</label><select id="loginProfile"><option value="Parent">Parent</option><option value="Alexane">Alexane</option><option value="Clémence">Clémence</option></select>':''}<label>E-mail</label><input id="email" type="email" autocomplete="username" placeholder="Ton adresse e-mail"><label>Mot de passe</label><input id="password" type="password" autocomplete="current-password" placeholder="Ton mot de passe"><div class="actions"><button class="primary" id="signin">Se connecter</button><button class="secondary" id="signout">Se déconnecter</button></div><div id="msg" class="status" aria-live="polite"></div><p class="hint">Le choix du profil ne donne pas d'autorisation supplémentaire : seuls les droits Supabase protègent les documents. Ne partage pas ton mot de passe.</p></div>`;
+ const parentPicker=document.getElementById('loginProfile');
+ if(parentPicker&&isParent())parentPicker.onchange=()=>aeParentNavigateTo(parentPicker.value);
  document.getElementById('signin').onclick=async()=>{
   if(!client)return message('Connexion au service indisponible. Vérifie ta connexion Internet puis actualise la page.');
-  const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value,desired=document.getElementById('loginProfile').value;
+  const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value;
   if(!email||!password)return message('Indique ton e-mail et ton mot de passe.');
   message('Connexion en cours…');
   const {data,error}=await client.auth.signInWithPassword({email,password});document.getElementById('password').value='';
   if(error)return message('Connexion refusée : '+error.message);
   session=data.session;
-  if(desired==='Parent'&&!isParent()){await client.auth.signOut();session=null;return message('Ce compte ne possède pas les droits Parent.');}
   const known=aeAccountProfile();
-  user=isParent()?'Parent':known||desired;
-  if(!isParent())aeRememberStudentProfile(user);
+  if(!isParent()&&!known){
+    message('Compte élève connecté, mais prénom non reconnu. Vérifie le prénom du compte dans Supabase (Alexane ou Clémence).');
+    return;
+  }
+  user=isParent()?'Parent':known;
   showWelcome=false;subject=null;lesson=null;cloudChapter=null;
   render();
  };
@@ -1513,6 +1517,32 @@ aeLibLoad=async function(announce=true){
 };
 // Ancienne décoration des dossiers désactivée : l'interface LAB remplace la bibliothèque Parent uniquement.
 ae15DecorateLibrary=async function(){};
+
+// Choix de navigation réservé au vrai compte Parent, sans emprunter une session Élève.
+function aeParentNavigateTo(space){
+ if(!isParent())return;
+ if(!['Parent','Alexane','Clémence'].includes(space))return;
+ user='Parent';showWelcome=false;subject=null;lesson=null;cloudChapter=null;
+ parentActiveTab=space==='Parent'?'home':'resources';
+ render();
+ if(space!=='Parent'){
+  const target=document.getElementById('target');
+  if(target){target.value=space;target.dispatchEvent(new Event('change'))}
+  const res=document.getElementById('resStudent');
+  if(res){res.value=space;res.dispatchEvent(new Event('change'))}
+ }
+ const picker=document.getElementById('aeParentSpacePicker');if(picker)picker.value=space;
+}
+const aeParentViewBeforeSpacePicker=parentView;
+parentView=function(){
+ aeParentViewBeforeSpacePicker();
+ if(!isParent())return;
+ const nav=document.querySelector('.parent-nav-tabs');if(!nav)return;
+ const bar=document.createElement('div');bar.className='panel';bar.style.cssText='padding:12px 15px;margin:10px 0 16px';
+ bar.innerHTML='<label for="aeParentSpacePicker">Choisir mon espace</label><select id="aeParentSpacePicker" style="width:100%;max-width:350px"><option value="Parent">Parent</option><option value="Alexane">Alexane</option><option value="Clémence">Clémence</option></select><p class="hint" style="margin:6px 0 0">Alexane et Clémence : consultation et gestion depuis ton compte Parent.</p>';
+ nav.after(bar);
+ bar.querySelector('select').onchange=e=>aeParentNavigateTo(e.target.value);
+}
 
 init();render();
 </script></body></html>
